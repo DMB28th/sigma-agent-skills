@@ -90,6 +90,15 @@ Then run:
 ./scripts/verify-workbook.sh <workbook-id>
 ```
 
+The script greps the compiled SQL for four markers: `Unknown column`,
+`Circular column reference`, `Column "[…]" does not exist` (a warehouse-table
+element referencing a column the connection's schema cache has not seen —
+sync the path, then re-verify) and `Reference to errored column "[…]"` (a
+consumer of any of the above; fix the upstream element). When in doubt, read
+`GET /v2/workbooks/<id>/elements/<eid>/query` yourself and export the element
+as CSV — a KPI whose export is the error string has failed even if the POST and
+readback looked fine.
+
 Finally render every affected page. Compile verification cannot prove that a
 join groups as intended, a control has options, a progress ring uses the right
 scale, or a layout is visually usable.

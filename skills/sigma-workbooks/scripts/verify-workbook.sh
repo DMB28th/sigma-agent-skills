@@ -6,6 +6,8 @@
 # time as string literals embedded in the compiled SQL — e.g.
 #   select 'Unknown column "[ORDER_TOTAL]"' V_44 from ...
 #   select 'Circular column reference to [Quarter]' V_11 ...
+#   select 'Column "[prices/price_major]" does not exist' V_18 ...   (stale schema cache)
+#   select 'Reference to errored column "[AUM (EUR)]"' V_33 ...     (consumer of an errored column)
 # The UI renders these elements as empty. Catching this is impossible from the
 # spec alone; only Sigma's compiler knows. This script asks the server.
 #
@@ -63,7 +65,7 @@ while IFS=$'\t' read -r EID NAME; do
   # grep exits 1 when no matches, which would trip `set -o pipefail` — swallow that
   # case explicitly so a clean element doesn't kill the loop.
   BAD=$(printf '%s' "$SQL" \
-    | grep -oE "(Unknown column \"[^\"]+\"|Circular column reference to \[[^]]+\])" \
+    | grep -oE "(Unknown column \"[^\"]+\"|Circular column reference to \[[^]]+\]|Column \"[^\"]+\" does not exist|Reference to errored column \"[^\"]+\")" \
     | sort -u | paste -sd '; ' - || true)
   if [ -n "$BAD" ]; then
     printf '  [FAIL] %-30s (%s) — %s\n' "$NAME" "$EID" "$BAD"
@@ -77,7 +79,9 @@ echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "$ERRORS of $TOTAL element(s) have unresolved formula references."
   echo "Fix the offending columns in the spec (see reference/specification/formulas.md)"
-  echo "and re-PUT the spec, then re-verify."
+  echo "and re-PUT the spec, then re-verify. A 'does not exist' hit on a warehouse-table"
+  echo "element usually means the connection's schema cache is stale — sync the table's"
+  echo "path (sigma api connections sync) and re-verify before touching the spec."
   exit 1
 fi
 echo "All $TOTAL element(s) compile cleanly."

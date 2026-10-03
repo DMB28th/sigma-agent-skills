@@ -119,6 +119,20 @@ The PUT endpoint replaces the entire `contents` — partial updates are not supp
 
 If you skip the GET and submit a partial `contents`, anything you didn't include is gone.
 
+## When a document does not round-trip
+
+`GET …?includeContents=true` → `PUT …/contents` of an unmodified export can be
+rejected for documents built in the UI over time — validation errors in
+elements you never touched (an overlay action with no effects, an
+`axisTotals.cellFormats` entry naming an undeclared column, two controls
+sharing a `controlId`, a data model with a hundred unresolved `Union of N
+Sources/…` references). Each fix tends to expose the next, and every fix edits
+a live element you did not intend to change. If the PUT fails on something
+outside your change: stop patching the export. Repoint tables with
+`swap-sources` (it rewrites references in place by column name — see the
+`sigma-cli` skill, *connections-and-sources.md*), and make small formula edits
+in the UI.
+
 ## IDs Are Preserved on CREATE
 
 The `id` values you send in `POST /v2/workbooks` — for pages, elements, and columns — are **preserved verbatim**. Layout `elementId` attributes, control bindings, and cross-element `source` references that name your IDs all stay valid after create. You can edit your saved spec and `PUT` it back directly (re-wrapped as `{contents: {...}}` — see below); `GET` the current spec first only when you don't have your latest copy on hand.

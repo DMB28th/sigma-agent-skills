@@ -92,6 +92,41 @@ sigma api workbooks swap-sources \
 `data-models swap-sources` and `templates swap-sources` take the same body
 against `dataModelId` / `templateId`.
 
+Three things the schema does not tell you (observed against a BigQuery
+connection, CLI 1.2.5):
+
+- **A `sourceMapping` on its own can be rejected** with `Please provide a
+  connection swap for <connectionId>`. The form that worked for a single-table
+  repoint keeps the connection and names the table by path:
+
+  ```sh
+  sigma api data-models swap-sources \
+    --params '{"dataModelId":"<YOUR_DATA_MODEL_ID>"}' \
+    --json   '{"connectionMapping":[{
+      "fromId":"<CONNECTION_ID>","toId":"<CONNECTION_ID>","swapTables":true,
+      "paths":[{"fromPath":["DB","OLD_SCHEMA","OLD_TABLE"],
+                "toPath":  ["DB","NEW_SCHEMA","NEW_TABLE"]}]
+    }]}'
+  ```
+
+  The response lists every source it did *not* touch under `unswappedSources`
+  — a long list there is normal, not a failure.
+- **The swap rewrites references by column name.** Every formula, lookup and
+  relationship that pointed at the old table is rewritten to the new one in
+  place, so the new table must expose the column names the document already
+  uses (add compatibility columns to a view rather than rewriting consumers).
+  It is the way to repoint a document whose exported spec no longer validates
+  on PUT — common on older workbooks and data models.
+- **The target must already be in the schema cache, with its final columns.**
+  A swap against a stale cache succeeds and rewrites references to columns
+  Sigma has not seen; the elements then compile to
+  `'Column "[table/col]" does not exist'` and their consumers to
+  `'Reference to errored column "[X]"'`. Run the sync below *after* the
+  warehouse change has landed, and re-run it if a swap was done too early —
+  existing references resolve again without another swap. Materialized
+  data-model elements still hold the old rows until their schedule is re-run
+  ([`materializations.md`](materializations.md)).
+
 For repeated promotions, a **source-swap policy** is a stored mapping you
 reference from elsewhere rather than pass to `swap-sources`:
 
@@ -124,6 +159,14 @@ sigma api connections sync \
 
 This refreshes the schema cache, not query results — for that, see
 [`materializations.md`](materializations.md).
+
+Timing matters: the sync captures whatever the warehouse has *at that moment*.
+A sync run seconds before a migration or Terraform apply finishes records the
+old shape, and the symptoms are indirect — a workbook write fails with
+`Warehouse table not found: '<db.schema.table>'`, or a swap rewrites references
+to columns that "do not exist" (previous section). Confirm the object is
+queryable with its final columns before syncing; a second sync fixes a stale
+one in place.
 
 ## Cross-references
 

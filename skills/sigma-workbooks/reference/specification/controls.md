@@ -313,6 +313,8 @@ filters:
 
 `number`, `date`, `checkbox`, and `switch` are single-value controls. `checkbox` and `switch` are the boolean widgets — same value (a boolean), different presentation:
 
+> ⚠️ **`date`, `switch` and `checkbox` were rejected on write in testing (2026-10-02)** — `Invalid kind: "control"` even for a body carrying only the four fields the schema marks required (`kind`, `id`, `controlId`, `controlType`), so the accepted value shape is not derivable from the spec. Until you have a readback of one that round-trips, author a `text` entry control instead (see *Entry (write) text controls* above) and interpret its value where it is consumed: `SAFE_CAST({{AsOf}} AS DATE)` in custom SQL, `Lower([Flag]) = "on"` in a formula.
+
 ```yaml
 kind: control
 id: ctrl-active-only

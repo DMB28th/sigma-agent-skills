@@ -84,6 +84,9 @@ set-default, rename, delete).
 headless or CI use, set `SIGMA_BASE_URL`, `SIGMA_CLIENT_ID`, and
 `SIGMA_CLIENT_SECRET` instead; they take precedence over stored profiles. See
 the `sigma-api` skill for what each variable means and where to find it.
+Pass a profile name anyway — `sigma -p env api …` — even though no such
+profile exists: with the three variables set but no `-p`, the CLI exits with
+`no default profile` instead of using them (observed on 1.2.5).
 
 Two seams matter when scripting against auth:
 

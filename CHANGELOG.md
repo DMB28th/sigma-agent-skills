@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+- **`sigma-cli`** — `connections-and-sources.md`: a `sourceMapping`-only `swap-sources` body can be rejected (`Please provide a connection swap`); documents the path-based `connectionMapping` form that works for a single-table repoint, that the swap rewrites references by column name, the `unswappedSources` response, and the schema-cache timing trap (sync *after* the warehouse change, or references compile to `Column … does not exist`). `SKILL.md`: env-var auth needs a `-p <name>` on the command line.
+- **`sigma-workbooks`** — `scripts/verify-workbook.sh` now also flags `Column "[…]" does not exist` and `Reference to errored column "[…]"`, which previously passed as clean while the element rendered an error. `validate.md`, `crud.md` (documents that do not round-trip → `swap-sources`), `sources.md` (an unset `{{control}}` compiles to `null`; export `parameters` to test a value) and `controls.md` (`date` / `switch` / `checkbox` rejected with schema-exact bodies; text-entry workaround) updated accordingly.
+
 ## v0.3.0 - 2026-09-16
 
 Adds `sigma-workbooks` and `sigma-reports` skills.

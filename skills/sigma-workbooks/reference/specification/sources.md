@@ -107,6 +107,13 @@ Custom SQL statements can bind workbook controls with
 `id`. Read back and query the element after POST: template text can survive
 serialization even when the runtime binding or SQL type is wrong.
 
+An unset control is substituted as the literal `null`, so give the statement a
+default and keep the cast safe, e.g.
+`COALESCE(SAFE_CAST({{AsOf}} AS DATE), DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))`.
+The compiled SQL (`GET /v2/workbooks/{id}/elements/{eid}/query`) shows the
+substituted text. To exercise a value without the UI, pass it to an export:
+`POST /v2/workbooks/{id}/export` with `{"elementId": …, "format": {"type": "csv"}, "parameters": {"AsOf": "2026-06-30"}}`.
+
 ## csv-table
 
 References a CSV file uploaded directly into Sigma, not a table synced from a connection.
